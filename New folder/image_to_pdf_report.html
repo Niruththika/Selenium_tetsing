@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title id="head-title">image_to_pdf_report.html</title>
+      <style type="text/css">body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  vertical-align: top;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+#environment ul {
+  margin: 0;
+  padding: 0 20px;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+.col-links__extra {
+  margin-right: 3px;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #e6e6e6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.logwrapper {
+  max-height: 230px;
+  overflow-y: scroll;
+  background-color: #e6e6e6;
+}
+.logwrapper.expanded {
+  max-height: none;
+}
+.logwrapper.expanded .logexpander:after {
+  content: "collapse [-]";
+}
+.logwrapper .logexpander {
+  z-index: 1;
+  position: sticky;
+  top: 10px;
+  width: max-content;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 5px 7px;
+  margin: 10px 0 10px calc(100% - 80px);
+  cursor: pointer;
+  background-color: #e6e6e6;
+}
+.logwrapper .logexpander:after {
+  content: "expand [+]";
+}
+.logwrapper .logexpander:hover {
+  color: #000;
+  border-color: #000;
+}
+.logwrapper .log {
+  min-height: 40px;
+  position: relative;
+  top: -50px;
+  height: calc(100% + 50px);
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  padding: 5px;
+  padding-right: 80px;
+  white-space: pre-wrap;
+}
+
+div.media {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin: 0 5px;
+  overflow: hidden;
+  width: 320px;
+}
+
+.media-container {
+  display: grid;
+  grid-template-columns: 25px auto 25px;
+  align-items: center;
+  flex: 1 1;
+  overflow: hidden;
+  height: 200px;
+}
+
+.media-container--fullscreen {
+  grid-template-columns: 0px auto 0px;
+}
+
+.media-container__nav--right,
+.media-container__nav--left {
+  text-align: center;
+  cursor: pointer;
+}
+
+.media-container__viewport {
+  cursor: pointer;
+  text-align: center;
+  height: inherit;
+}
+.media-container__viewport img,
+.media-container__viewport video {
+  object-fit: cover;
+  width: 100%;
+  max-height: 100%;
+}
+
+.media__name,
+.media__counter {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  flex: 0 0 25px;
+  align-items: center;
+}
+
+.collapsible td:not(.col-links) {
+  cursor: pointer;
+}
+.collapsible td:not(.col-links):hover::after {
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.col-result {
+  width: 130px;
+}
+.col-result:hover::after {
+  content: " (hide details)";
+}
+
+.col-result.collapsed:hover::after {
+  content: " (show details)";
+}
+
+#environment-header h2:hover::after {
+  content: " (hide details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#environment-header.collapsed h2:hover::after {
+  content: " (show details)";
+  color: #bbb;
+  font-style: italic;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+.sortable.desc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: -12.5px;
+  border: 10px solid #4caf50;
+  border-bottom: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.sortable.asc:after {
+  content: " ";
+  position: relative;
+  left: 5px;
+  bottom: 12.5px;
+  border: 10px solid #4caf50;
+  border-top: 0;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+
+.hidden, .summary__reload__button.hidden {
+  display: none;
+}
+
+.summary__data {
+  flex: 0 0 550px;
+}
+.summary__reload {
+  flex: 1 1;
+  display: flex;
+  justify-content: center;
+}
+.summary__reload__button {
+  flex: 0 0 300px;
+  display: flex;
+  color: white;
+  font-weight: bold;
+  background-color: #4caf50;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.summary__reload__button:hover {
+  background-color: #46a049;
+}
+.summary__spacer {
+  flex: 0 0 550px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.filters,
+.collapse {
+  display: flex;
+  align-items: center;
+}
+.filters button,
+.collapse button {
+  color: #999;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.filters button:hover,
+.collapse button:hover {
+  color: #ccc;
+}
+
+.filter__label {
+  margin-right: 10px;
+}
+
+      </style>
+    
+  </head>
+  <body>
+    <h1 id="title">image_to_pdf_report.html</h1>
+    <p>Report generated on 19-Apr-2026 at 16:10:25 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a>
+        v4.2.0</p>
+    <div id="environment-header">
+      <h2>Environment</h2>
+    </div>
+    <table id="environment"></table>
+    <!-- TEMPLATES -->
+      <template id="template_environment_row">
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+    </template>
+    <template id="template_results-table__body--empty">
+      <tbody class="results-table-row">
+        <tr id="not-found-message">
+          <td colspan="4">No results found. Check the filters.</td>
+        </tr>
+      </tbody>
+    </template>
+    <template id="template_results-table__tbody">
+      <tbody class="results-table-row">
+        <tr class="collapsible">
+        </tr>
+        <tr class="extras-row">
+          <td class="extra" colspan="4">
+            <div class="extraHTML"></div>
+            <div class="media">
+              <div class="media-container">
+                  <div class="media-container__nav--left">&lt;</div>
+                  <div class="media-container__viewport">
+                    <img src="" />
+                    <video controls>
+                      <source src="" type="video/mp4">
+                    </video>
+                  </div>
+                  <div class="media-container__nav--right">&gt;</div>
+                </div>
+                <div class="media__name"></div>
+                <div class="media__counter"></div>
+            </div>
+            <div class="logwrapper">
+              <div class="logexpander"></div>
+              <div class="log"></div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </template>
+    <!-- END TEMPLATES -->
+    <div class="summary">
+      <div class="summary__data">
+        <h2>Summary</h2>
+        <div class="additional-summary prefix">
+        </div>
+        <p class="run-count">48 tests took 00:15:50.</p>
+        <p class="filter">(Un)check the boxes to filter the results.</p>
+        <div class="summary__reload">
+          <div class="summary__reload__button hidden" onclick="location.reload()">
+            <div>There are still tests running. <br />Reload this page to get the latest results!</div>
+          </div>
+        </div>
+        <div class="summary__spacer"></div>
+        <div class="controls">
+          <div class="filters">
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="failed" >
+            <span class="failed">6 Failed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="passed" >
+            <span class="passed">42 Passed,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="skipped" >
+            <span class="skipped">1 Skipped,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xfailed" disabled>
+            <span class="xfailed">0 Expected failures,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="xpassed" disabled>
+            <span class="xpassed">0 Unexpected passes,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="error" disabled>
+            <span class="error">0 Errors,</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="rerun" disabled>
+            <span class="rerun">0 Reruns</span>
+            <input checked="true" class="filter" name="filter_checkbox" type="checkbox" data-test-result="retried" disabled>
+            <span class="retried">0 Retried,</span>
+          </div>
+          <div class="collapse">
+            <button id="show_all_details">Show all details</button>&nbsp;/&nbsp;<button id="hide_all_details">Hide all details</button>
+          </div>
+        </div>
+      </div>
+      <div class="additional-summary summary">
+      </div>
+      <div class="additional-summary postfix">
+      </div>
+    </div>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable" data-column-type="result">Result</th>
+          <th class="sortable" data-column-type="testId">Test</th>
+          <th class="sortable" data-column-type="duration">Duration</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+    </table>
+  <footer>
+    <div id="data-container" data-jsonblob="{&#34;environment&#34;: {&#34;Python&#34;: &#34;3.14.2&#34;, &#34;Platform&#34;: &#34;Windows-11-10.0.26200-SP0&#34;, &#34;Packages&#34;: {&#34;pytest&#34;: &#34;9.0.3&#34;, &#34;pluggy&#34;: &#34;1.6.0&#34;}, &#34;Plugins&#34;: {&#34;anyio&#34;: &#34;4.12.0&#34;, &#34;html&#34;: &#34;4.2.0&#34;, &#34;metadata&#34;: &#34;3.1.1&#34;}}, &#34;tests&#34;: {&#34;image_to_pdf.py::test_all_cases[TC_001 - Upload valid image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_001 - Upload valid image]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_001 - Upload valid image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_001 - Upload valid image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_002 - Upload multiple images]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_002 - Upload multiple images]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_002 - Upload multiple images]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_002 - Upload multiple images\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_003 - Skip test case]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Skipped&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_003 - Skip test case]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Skipped&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_003 - Skip test case]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;(&amp;#x27;C:\\\\Users\\\\Asus\\\\Desktop\\\\New folder\\\\image_to_pdf.py&amp;#x27;, 144, &amp;#x27;Skipped: Skipped test case&amp;#x27;)\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_003 - Skip test case\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_004 - Upload invalid file (PDF)]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_004 - Upload invalid file (PDF)]&#34;, &#34;duration&#34;: &#34;00:00:19&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_004 - Upload invalid file (PDF)]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:19&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;c304775adbcf5562df1044554bec2d73&amp;quot;)&amp;gt;, tc_id = 4\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;c304775adbcf5562df1044554bec2d73&amp;quot;)&amp;gt;, tc_id = 4\n\n    def execute_test(driver, tc_id):\n    \n        if tc_id == 1:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 2:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 3:\n            pytest.skip(&amp;quot;Skipped test case&amp;quot;)\n    \n        elif tc_id == 4:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n&amp;gt;           assert &amp;quot;invalid&amp;quot; in page or &amp;quot;unsupported&amp;quot; in page\nE           assert (&amp;#x27;invalid&amp;#x27; in &amp;#x27;&amp;lt;html lang=&amp;quot;en&amp;quot;&amp;gt;&amp;lt;head&amp;gt;\\n    &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;\\n    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;\\n    &amp;lt;title&amp;gt;pixelssuite&amp;lt;/title&amp;gt;\\n    &amp;lt;script type=&amp;quot;module&amp;quot; crossorigin=&amp;quot;&amp;quot; src=&amp;quot;./assets/index-b5r-ecgl.js&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;\\n    &amp;lt;link rel=&amp;quot;stylesheet&amp;quot; crossorigin=&amp;quot;&amp;quot; href=&amp;quot;./assets/index-d82aqnok.css&amp;quot;&amp;gt;\\n  &amp;lt;/head&amp;gt;\\n  &amp;lt;body class=&amp;quot;bg-slate-100&amp;quot;&amp;gt;\\n    &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;min-h-full&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;w-full p-0 space-y-4&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between p-3 md:p-4 sticky top-0 z-30 bg-white border-b&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;md:hidden px-2 py-1 rounded-lg bg-slate-100 text-slate-700&amp;quot; title=&amp;quot;menu&amp;quot;&amp;gt;\u2630&amp;lt;/button&amp;gt;&amp;lt;button class=&amp;quot;text-lg font-semibold hover:text-slate-900 text-slate-800&amp;quot; title=&amp;quot;home&amp;quot;&amp;gt;pixelssuite&amp;lt;/button&amp;gt;&amp;lt;div class=&amp;quot;hidden md:flex items-center gap-3 text-sm relative&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;document converter \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;editor \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;resize \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;...wvu2l6zsaxnjevum9vdcaxidagui9jbmzvidm3idagui9jrfs8odfeqzk3ntg1rti2mjm0ree2ntuyqja2otq1mdy2otg+pdgxrem5nzu4nuuynjiznerbnju1mkiwnjk0nta2njk4pl0gl1byzxygmjiyndq5l1hszwztdg0gmjixody0pj4ncnn0yxj0ehjlzg0kmji1odi5dqoljuvprg==&amp;quot; alt=&amp;quot;thumb-0&amp;quot; class=&amp;quot;w-full h-28 object-cover rounded border&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white&amp;quot;&amp;gt;1&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;hidden xl:block xl:col-span-2&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;sticky top-20&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;h-[600px]&amp;quot; aria-hidden=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;footer class=&amp;quot;border-t mt-8&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between py-4 text-sm text-slate-600&amp;quot;&amp;gt;&amp;lt;div&amp;gt;pixelssuite \u00a92026&amp;lt;/div&amp;gt;&amp;lt;nav class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;/about&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;about us&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/contact&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;contact&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/privacy&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;privacy policy&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/terms&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;terms of service&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/disclaimer&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;disclaimer&amp;lt;/a&amp;gt;&amp;lt;/nav&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/footer&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;\\n\\n  \\n  \\n&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;&amp;#x27; or &amp;#x27;unsupported&amp;#x27; in &amp;#x27;&amp;lt;html lang=&amp;quot;en&amp;quot;&amp;gt;&amp;lt;head&amp;gt;\\n    &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;\\n    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;\\n    &amp;lt;title&amp;gt;pixelssuite&amp;lt;/title&amp;gt;\\n    &amp;lt;script type=&amp;quot;module&amp;quot; crossorigin=&amp;quot;&amp;quot; src=&amp;quot;./assets/index-b5r-ecgl.js&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;\\n    &amp;lt;link rel=&amp;quot;stylesheet&amp;quot; crossorigin=&amp;quot;&amp;quot; href=&amp;quot;./assets/index-d82aqnok.css&amp;quot;&amp;gt;\\n  &amp;lt;/head&amp;gt;\\n  &amp;lt;body class=&amp;quot;bg-slate-100&amp;quot;&amp;gt;\\n    &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;min-h-full&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;w-full p-0 space-y-4&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between p-3 md:p-4 sticky top-0 z-30 bg-white border-b&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;md:hidden px-2 py-1 rounded-lg bg-slate-100 text-slate-700&amp;quot; title=&amp;quot;menu&amp;quot;&amp;gt;\u2630&amp;lt;/button&amp;gt;&amp;lt;button class=&amp;quot;text-lg font-semibold hover:text-slate-900 text-slate-800&amp;quot; title=&amp;quot;home&amp;quot;&amp;gt;pixelssuite&amp;lt;/button&amp;gt;&amp;lt;div class=&amp;quot;hidden md:flex items-center gap-3 text-sm relative&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;document converter \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;editor \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;resize \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;...wvu2l6zsaxnjevum9vdcaxidagui9jbmzvidm3idagui9jrfs8odfeqzk3ntg1rti2mjm0ree2ntuyqja2otq1mdy2otg+pdgxrem5nzu4nuuynjiznerbnju1mkiwnjk0nta2njk4pl0gl1byzxygmjiyndq5l1hszwztdg0gmjixody0pj4ncnn0yxj0ehjlzg0kmji1odi5dqoljuvprg==&amp;quot; alt=&amp;quot;thumb-0&amp;quot; class=&amp;quot;w-full h-28 object-cover rounded border&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white&amp;quot;&amp;gt;1&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;hidden xl:block xl:col-span-2&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;sticky top-20&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;h-[600px]&amp;quot; aria-hidden=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;footer class=&amp;quot;border-t mt-8&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between py-4 text-sm text-slate-600&amp;quot;&amp;gt;&amp;lt;div&amp;gt;pixelssuite \u00a92026&amp;lt;/div&amp;gt;&amp;lt;nav class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;/about&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;about us&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/contact&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;contact&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/privacy&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;privacy policy&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/terms&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;terms of service&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/disclaimer&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;disclaimer&amp;lt;/a&amp;gt;&amp;lt;/nav&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/footer&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;\\n\\n  \\n  \\n&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;&amp;#x27;)\n\nimage_to_pdf.py:149: AssertionError\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_004 - Upload invalid file (PDF)\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_005 - Upload large image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_005 - Upload large image]&#34;, &#34;duration&#34;: &#34;00:00:16&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_005 - Upload large image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:16&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_005 - Upload large image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_006 - Remove uploaded image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_006 - Remove uploaded image]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_006 - Remove uploaded image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_006 - Remove uploaded image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_007 - Multiple upload validation]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_007 - Multiple upload validation]&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_007 - Multiple upload validation]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_007 - Multiple upload validation\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_008 - No action]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_008 - No action]&#34;, &#34;duration&#34;: &#34;00:00:10&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_008 - No action]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:10&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_008 - No action\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_009 - Upload single image again]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_009 - Upload single image again]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_009 - Upload single image again]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_009 - Upload single image again\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_010 - Upload 3 images]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_010 - Upload 3 images]&#34;, &#34;duration&#34;: &#34;00:00:15&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_010 - Upload 3 images]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:15&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_010 - Upload 3 images\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_011 - Upload then remove image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_011 - Upload then remove image]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_011 - Upload then remove image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_011 - Upload then remove image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_012]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_012]&#34;, &#34;duration&#34;: &#34;00:00:10&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_012]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:10&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: None\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_013 - Select A4 size]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_013 - Select A4 size]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_013 - Select A4 size]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_013 - Select A4 size\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_014 - Select Letter size]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_014 - Select Letter size]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_014 - Select Letter size]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_014 - Select Letter size\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_015 - Select Portrait mode]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_015 - Select Portrait mode]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_015 - Select Portrait mode]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_015 - Select Portrait mode\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_016 - Select Landscape mode]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_016 - Select Landscape mode]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_016 - Select Landscape mode]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_016 - Select Landscape mode\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_017 - Select Vertical layout]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_017 - Select Vertical layout]&#34;, &#34;duration&#34;: &#34;00:00:18&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_017 - Select Vertical layout]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:18&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_017 - Select Vertical layout\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_018 - Select Horizontal layout]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_018 - Select Horizontal layout]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_018 - Select Horizontal layout]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_018 - Select Horizontal layout\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_019 - Select single page]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_019 - Select single page]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_019 - Select single page]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_019 - Select single page\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_020 - Select multiple pages]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_020 - Select multiple pages]&#34;, &#34;duration&#34;: &#34;00:00:19&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_020 - Select multiple pages]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:19&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_020 - Select multiple pages\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_021 - Settings combination test]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_021 - Settings combination test]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_021 - Settings combination test]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_021 - Settings combination test\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_022 - A4 + Portrait + Vertical + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_022 - A4 + Portrait + Vertical + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_022 - A4 + Portrait + Vertical + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_022 - A4 + Portrait + Vertical + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_023 - A4 + Portrait + Horizontal + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_023 - A4 + Portrait + Horizontal + Single]&#34;, &#34;duration&#34;: &#34;00:00:21&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_023 - A4 + Portrait + Horizontal + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:21&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_023 - A4 + Portrait + Horizontal + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_024 - A4 + Landscape + Vertical + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_024 - A4 + Landscape + Vertical + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_024 - A4 + Landscape + Vertical + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_024 - A4 + Landscape + Vertical + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_025 - A4 + Landscape + Horizontal + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_025 - A4 + Landscape + Horizontal + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_025 - A4 + Landscape + Horizontal + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_025 - A4 + Landscape + Horizontal + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_026 - A4 + Portrait + Vertical + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_026 - A4 + Portrait + Vertical + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_026 - A4 + Portrait + Vertical + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_026 - A4 + Portrait + Vertical + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_027 - A4 + Landscape + Horizontal + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_027 - A4 + Landscape + Horizontal + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_027 - A4 + Landscape + Horizontal + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_027 - A4 + Landscape + Horizontal + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_028 - A4 + Portrait + Horizontal + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_028 - A4 + Portrait + Horizontal + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_028 - A4 + Portrait + Horizontal + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_028 - A4 + Portrait + Horizontal + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_029 - A4 + Landscape + Vertical + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_029 - A4 + Landscape + Vertical + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_029 - A4 + Landscape + Vertical + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_029 - A4 + Landscape + Vertical + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_030 - Letter + Portrait + Vertical + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_030 - Letter + Portrait + Vertical + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_030 - Letter + Portrait + Vertical + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_030 - Letter + Portrait + Vertical + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_031 - Letter + Portrait + Horizontal + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_031 - Letter + Portrait + Horizontal + Single]&#34;, &#34;duration&#34;: &#34;00:00:21&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_031 - Letter + Portrait + Horizontal + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:21&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_031 - Letter + Portrait + Horizontal + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_032 - Letter + Landscape + Vertical + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_032 - Letter + Landscape + Vertical + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_032 - Letter + Landscape + Vertical + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_032 - Letter + Landscape + Vertical + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_033 - Letter + Landscape + Horizontal + Single]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_033 - Letter + Landscape + Horizontal + Single]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_033 - Letter + Landscape + Horizontal + Single]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_033 - Letter + Landscape + Horizontal + Single\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_034 - Letter + Portrait + Vertical + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_034 - Letter + Portrait + Vertical + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:22&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_034 - Letter + Portrait + Vertical + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:22&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_034 - Letter + Portrait + Vertical + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_035 - Letter + Landscape + Horizontal + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_035 - Letter + Landscape + Horizontal + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_035 - Letter + Landscape + Horizontal + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_035 - Letter + Landscape + Horizontal + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_036 - Letter + Portrait + Horizontal + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_036 - Letter + Portrait + Horizontal + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_036 - Letter + Portrait + Horizontal + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_036 - Letter + Portrait + Horizontal + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_037 - Letter + Landscape + Vertical + Multiple]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_037 - Letter + Landscape + Vertical + Multiple]&#34;, &#34;duration&#34;: &#34;00:00:20&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_037 - Letter + Landscape + Vertical + Multiple]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:20&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_037 - Letter + Landscape + Vertical + Multiple\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_038 - Upload corrupt image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_038 - Upload corrupt image]&#34;, &#34;duration&#34;: &#34;00:00:13&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_038 - Upload corrupt image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:13&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_038 - Upload corrupt image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_039 - Upload unsupported file (PPTX)]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_039 - Upload unsupported file (PPTX)]&#34;, &#34;duration&#34;: &#34;00:00:15&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_039 - Upload unsupported file (PPTX)]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:15&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;7cdfe4192c80644500875c9c901f8e05&amp;quot;)&amp;gt;, tc_id = 39\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;7cdfe4192c80644500875c9c901f8e05&amp;quot;)&amp;gt;, tc_id = 39\n\n    def execute_test(driver, tc_id):\n    \n        if tc_id == 1:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 2:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 3:\n            pytest.skip(&amp;quot;Skipped test case&amp;quot;)\n    \n        elif tc_id == 4:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;unsupported&amp;quot; in page\n    \n        elif tc_id == 5:\n         upload(driver, os.path.join(DESKTOP, &amp;quot;big.jpg&amp;quot;))\n    \n        page = driver.page_source.lower()\n    \n        # If system does NOT show any restriction message \u2192 it&amp;#x27;s a failure\n        if &amp;quot;large&amp;quot; not in page and &amp;quot;limit&amp;quot; not in page and &amp;quot;mb&amp;quot; not in page:\n            assert False, &amp;quot;FAIL: System allowed large file upload (should be restricted)&amp;quot;\n    \n        elif tc_id == 6:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif tc_id == 7:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 8:\n            pass\n    \n        elif tc_id == 9:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 10:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 11:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif 13 &amp;lt;= tc_id &amp;lt;= 21:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            if tc_id == 13: click(driver, &amp;quot;A4&amp;quot;)\n            elif tc_id == 14: click(driver, &amp;quot;Letter&amp;quot;)\n            elif tc_id == 15: click(driver, &amp;quot;Portrait&amp;quot;)\n            elif tc_id == 16: click(driver, &amp;quot;Landscape&amp;quot;)\n            elif tc_id == 17: click(driver, &amp;quot;Vertical&amp;quot;)\n            elif tc_id == 18: click(driver, &amp;quot;Horizontal&amp;quot;)\n            elif tc_id == 19: click(driver, &amp;quot;One&amp;quot;)\n            else: click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif 22 &amp;lt;= tc_id &amp;lt;= 37:\n    \n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            # A4 vs Letter\n            if tc_id &amp;lt;= 29:\n                click(driver, &amp;quot;A4&amp;quot;)\n            else:\n                click(driver, &amp;quot;Letter&amp;quot;)\n    \n            # Portrait vs Landscape\n            if tc_id in [22,23,26,28,30,31,34,36]:\n                click(driver, &amp;quot;Portrait&amp;quot;)\n            else:\n                click(driver, &amp;quot;Landscape&amp;quot;)\n    \n            # Vertical vs Horizontal\n            if tc_id in [22,24,26,29,30,32,34,37]:\n                click(driver, &amp;quot;Vertical&amp;quot;)\n            else:\n                click(driver, &amp;quot;Horizontal&amp;quot;)\n    \n            # One vs Multiple\n            if tc_id in [22,23,24,25,30,31,32,33]:\n                click(driver, &amp;quot;One&amp;quot;)\n            else:\n                click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif tc_id == 38:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;corrupt.jpg&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;corrupt&amp;quot; in page\n    \n        elif tc_id == 39:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pptx&amp;quot;))\n            page = driver.page_source.lower()\n&amp;gt;           assert &amp;quot;unsupported&amp;quot; in page or &amp;quot;invalid&amp;quot; in page\nE           assert (&amp;#x27;unsupported&amp;#x27; in &amp;#x27;&amp;lt;html lang=&amp;quot;en&amp;quot;&amp;gt;&amp;lt;head&amp;gt;\\n    &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;\\n    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;\\n    &amp;lt;title&amp;gt;pixelssuite&amp;lt;/title&amp;gt;\\n    &amp;lt;script type=&amp;quot;module&amp;quot; crossorigin=&amp;quot;&amp;quot; src=&amp;quot;./assets/index-b5r-ecgl.js&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;\\n    &amp;lt;link rel=&amp;quot;stylesheet&amp;quot; crossorigin=&amp;quot;&amp;quot; href=&amp;quot;./assets/index-d82aqnok.css&amp;quot;&amp;gt;\\n  &amp;lt;/head&amp;gt;\\n  &amp;lt;body class=&amp;quot;bg-slate-100&amp;quot;&amp;gt;\\n    &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;min-h-full&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;w-full p-0 space-y-4&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between p-3 md:p-4 sticky top-0 z-30 bg-white border-b&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;md:hidden px-2 py-1 rounded-lg bg-slate-100 text-slate-700&amp;quot; title=&amp;quot;menu&amp;quot;&amp;gt;\u2630&amp;lt;/button&amp;gt;&amp;lt;button class=&amp;quot;text-lg font-semibold hover:text-slate-900 text-slate-800&amp;quot; title=&amp;quot;home&amp;quot;&amp;gt;pixelssuite&amp;lt;/button&amp;gt;&amp;lt;div class=&amp;quot;hidden md:flex items-center gap-3 text-sm relative&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;document converter \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;editor \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;resize \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;...rhymxlu3r5bgvzlnhtbfblaqitabqabgaiaaaaiqbk3nxxrgeaaawdaaaraaaaaaaaaaaaaaaaaknqsgbkb2nqcm9wcy9jb3jllnhtbfblaqitabqabgaiaaaaiqcadth5pqiaajsgaaaqaaaaaaaaaaaaaaaaai7tsgbkb2nqcm9wcy9hchaueg1suesfbgaaaaa9ad0a5reaaahxsgaaaa==&amp;quot; alt=&amp;quot;thumb-0&amp;quot; class=&amp;quot;w-full h-28 object-cover rounded border&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white&amp;quot;&amp;gt;1&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;hidden xl:block xl:col-span-2&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;sticky top-20&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;h-[600px]&amp;quot; aria-hidden=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;footer class=&amp;quot;border-t mt-8&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between py-4 text-sm text-slate-600&amp;quot;&amp;gt;&amp;lt;div&amp;gt;pixelssuite \u00a92026&amp;lt;/div&amp;gt;&amp;lt;nav class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;/about&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;about us&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/contact&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;contact&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/privacy&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;privacy policy&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/terms&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;terms of service&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/disclaimer&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;disclaimer&amp;lt;/a&amp;gt;&amp;lt;/nav&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/footer&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;\\n\\n  \\n  \\n&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;&amp;#x27; or &amp;#x27;invalid&amp;#x27; in &amp;#x27;&amp;lt;html lang=&amp;quot;en&amp;quot;&amp;gt;&amp;lt;head&amp;gt;\\n    &amp;lt;meta charset=&amp;quot;utf-8&amp;quot;&amp;gt;\\n    &amp;lt;meta name=&amp;quot;viewport&amp;quot; content=&amp;quot;width=device-width, initial-scale=1.0&amp;quot;&amp;gt;\\n    &amp;lt;title&amp;gt;pixelssuite&amp;lt;/title&amp;gt;\\n    &amp;lt;script type=&amp;quot;module&amp;quot; crossorigin=&amp;quot;&amp;quot; src=&amp;quot;./assets/index-b5r-ecgl.js&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;\\n    &amp;lt;link rel=&amp;quot;stylesheet&amp;quot; crossorigin=&amp;quot;&amp;quot; href=&amp;quot;./assets/index-d82aqnok.css&amp;quot;&amp;gt;\\n  &amp;lt;/head&amp;gt;\\n  &amp;lt;body class=&amp;quot;bg-slate-100&amp;quot;&amp;gt;\\n    &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;min-h-full&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;w-full p-0 space-y-4&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between p-3 md:p-4 sticky top-0 z-30 bg-white border-b&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;md:hidden px-2 py-1 rounded-lg bg-slate-100 text-slate-700&amp;quot; title=&amp;quot;menu&amp;quot;&amp;gt;\u2630&amp;lt;/button&amp;gt;&amp;lt;button class=&amp;quot;text-lg font-semibold hover:text-slate-900 text-slate-800&amp;quot; title=&amp;quot;home&amp;quot;&amp;gt;pixelssuite&amp;lt;/button&amp;gt;&amp;lt;div class=&amp;quot;hidden md:flex items-center gap-3 text-sm relative&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;document converter \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;editor \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;&amp;gt;&amp;lt;button class=&amp;quot;px-2 py-1 text-slate-600 hover:text-slate-900&amp;quot;&amp;gt;resize \u25be&amp;lt;/button&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;relative&amp;quot;...rhymxlu3r5bgvzlnhtbfblaqitabqabgaiaaaaiqbk3nxxrgeaaawdaaaraaaaaaaaaaaaaaaaaknqsgbkb2nqcm9wcy9jb3jllnhtbfblaqitabqabgaiaaaaiqcadth5pqiaajsgaaaqaaaaaaaaaaaaaaaaai7tsgbkb2nqcm9wcy9hchaueg1suesfbgaaaaa9ad0a5reaaahxsgaaaa==&amp;quot; alt=&amp;quot;thumb-0&amp;quot; class=&amp;quot;w-full h-28 object-cover rounded border&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white&amp;quot;&amp;gt;1&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;div class=&amp;quot;hidden xl:block xl:col-span-2&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;sticky top-20&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;h-[600px]&amp;quot; aria-hidden=&amp;quot;true&amp;quot;&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;footer class=&amp;quot;border-t mt-8&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12&amp;quot;&amp;gt;&amp;lt;div class=&amp;quot;flex items-center justify-between py-4 text-sm text-slate-600&amp;quot;&amp;gt;&amp;lt;div&amp;gt;pixelssuite \u00a92026&amp;lt;/div&amp;gt;&amp;lt;nav class=&amp;quot;flex items-center gap-6&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;/about&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;about us&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/contact&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;contact&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/privacy&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;privacy policy&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/terms&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;terms of service&amp;lt;/a&amp;gt;&amp;lt;a href=&amp;quot;/disclaimer&amp;quot; class=&amp;quot;hover:text-slate-900&amp;quot;&amp;gt;disclaimer&amp;lt;/a&amp;gt;&amp;lt;/nav&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/footer&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;\\n\\n  \\n  \\n&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;&amp;#x27;)\n\nimage_to_pdf.py:239: AssertionError\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_039 - Upload unsupported file (PPTX)\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_040 - Refresh after upload]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_040 - Refresh after upload]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_040 - Refresh after upload]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_040 - Refresh after upload\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_041 - Upload long filename image]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_041 - Upload long filename image]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_041 - Upload long filename image]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_041 - Upload long filename image\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_042 - Resize window small]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_042 - Resize window small]&#34;, &#34;duration&#34;: &#34;00:00:10&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_042 - Resize window small]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:10&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_042 - Resize window small\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_043 - Mobile view UI check]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_043 - Mobile view UI check]&#34;, &#34;duration&#34;: &#34;00:00:11&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_043 - Mobile view UI check]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:11&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;375440e29719eec441f32d0303c70d8e&amp;quot;)&amp;gt;, tc_id = 43\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;375440e29719eec441f32d0303c70d8e&amp;quot;)&amp;gt;, tc_id = 43\n\n    def execute_test(driver, tc_id):\n    \n        if tc_id == 1:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 2:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 3:\n            pytest.skip(&amp;quot;Skipped test case&amp;quot;)\n    \n        elif tc_id == 4:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;unsupported&amp;quot; in page\n    \n        elif tc_id == 5:\n         upload(driver, os.path.join(DESKTOP, &amp;quot;big.jpg&amp;quot;))\n    \n        page = driver.page_source.lower()\n    \n        # If system does NOT show any restriction message \u2192 it&amp;#x27;s a failure\n        if &amp;quot;large&amp;quot; not in page and &amp;quot;limit&amp;quot; not in page and &amp;quot;mb&amp;quot; not in page:\n            assert False, &amp;quot;FAIL: System allowed large file upload (should be restricted)&amp;quot;\n    \n        elif tc_id == 6:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif tc_id == 7:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 8:\n            pass\n    \n        elif tc_id == 9:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 10:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 11:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif 13 &amp;lt;= tc_id &amp;lt;= 21:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            if tc_id == 13: click(driver, &amp;quot;A4&amp;quot;)\n            elif tc_id == 14: click(driver, &amp;quot;Letter&amp;quot;)\n            elif tc_id == 15: click(driver, &amp;quot;Portrait&amp;quot;)\n            elif tc_id == 16: click(driver, &amp;quot;Landscape&amp;quot;)\n            elif tc_id == 17: click(driver, &amp;quot;Vertical&amp;quot;)\n            elif tc_id == 18: click(driver, &amp;quot;Horizontal&amp;quot;)\n            elif tc_id == 19: click(driver, &amp;quot;One&amp;quot;)\n            else: click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif 22 &amp;lt;= tc_id &amp;lt;= 37:\n    \n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            # A4 vs Letter\n            if tc_id &amp;lt;= 29:\n                click(driver, &amp;quot;A4&amp;quot;)\n            else:\n                click(driver, &amp;quot;Letter&amp;quot;)\n    \n            # Portrait vs Landscape\n            if tc_id in [22,23,26,28,30,31,34,36]:\n                click(driver, &amp;quot;Portrait&amp;quot;)\n            else:\n                click(driver, &amp;quot;Landscape&amp;quot;)\n    \n            # Vertical vs Horizontal\n            if tc_id in [22,24,26,29,30,32,34,37]:\n                click(driver, &amp;quot;Vertical&amp;quot;)\n            else:\n                click(driver, &amp;quot;Horizontal&amp;quot;)\n    \n            # One vs Multiple\n            if tc_id in [22,23,24,25,30,31,32,33]:\n                click(driver, &amp;quot;One&amp;quot;)\n            else:\n                click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif tc_id == 38:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;corrupt.jpg&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;corrupt&amp;quot; in page\n    \n        elif tc_id == 39:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pptx&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;unsupported&amp;quot; in page or &amp;quot;invalid&amp;quot; in page\n    \n        elif tc_id == 40:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.refresh()\n    \n        elif tc_id == 41:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;longfilename.jpg&amp;quot;))\n    \n        elif tc_id == 42:\n            driver.set_window_size(400, 800)\n    \n        elif tc_id == 43:\n            driver.set_window_size(375, 812)\n            time.sleep(2)\n&amp;gt;           assert driver.find_element(By.XPATH, &amp;quot;//input[@type=&amp;#x27;file&amp;#x27;]&amp;quot;).is_displayed()\nE           assert False\nE            +  where False = is_displayed()\nE            +    where is_displayed = &amp;lt;selenium.webdriver.remote.webelement.WebElement (session=&amp;quot;375440e29719eec441f32d0303c70d8e&amp;quot;, element=&amp;quot;f.7FB49B8972E4248BA276B11E073AEC0F.d.F9E7B2F0B9081581192D1FC924A7EB13.e.15&amp;quot;)&amp;gt;.is_displayed\nE            +      where &amp;lt;selenium.webdriver.remote.webelement.WebElement (session=&amp;quot;375440e29719eec441f32d0303c70d8e&amp;quot;, element=&amp;quot;f.7FB49B8972E4248BA276B11E073AEC0F.d.F9E7B2F0B9081581192D1FC924A7EB13.e.15&amp;quot;)&amp;gt; = find_element(&amp;#x27;xpath&amp;#x27;, &amp;quot;//input[@type=&amp;#x27;file&amp;#x27;]&amp;quot;)\nE            +        where find_element = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;375440e29719eec441f32d0303c70d8e&amp;quot;)&amp;gt;.find_element\nE            +        and   &amp;#x27;xpath&amp;#x27; = By.XPATH\n\nimage_to_pdf.py:254: AssertionError\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_043 - Mobile view UI check\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_044]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_044]&#34;, &#34;duration&#34;: &#34;00:00:09&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_044]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:09&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: None\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_045 - Upload PDF error validation]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_045 - Upload PDF error validation]&#34;, &#34;duration&#34;: &#34;00:00:12&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_045 - Upload PDF error validation]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:12&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;d191a18bdd1659e264c8c284dbfd379b&amp;quot;)&amp;gt;, tc_id = 45\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;d191a18bdd1659e264c8c284dbfd379b&amp;quot;)&amp;gt;, tc_id = 45\n\n    def execute_test(driver, tc_id):\n    \n        if tc_id == 1:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 2:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 3:\n            pytest.skip(&amp;quot;Skipped test case&amp;quot;)\n    \n        elif tc_id == 4:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;unsupported&amp;quot; in page\n    \n        elif tc_id == 5:\n         upload(driver, os.path.join(DESKTOP, &amp;quot;big.jpg&amp;quot;))\n    \n        page = driver.page_source.lower()\n    \n        # If system does NOT show any restriction message \u2192 it&amp;#x27;s a failure\n        if &amp;quot;large&amp;quot; not in page and &amp;quot;limit&amp;quot; not in page and &amp;quot;mb&amp;quot; not in page:\n            assert False, &amp;quot;FAIL: System allowed large file upload (should be restricted)&amp;quot;\n    \n        elif tc_id == 6:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif tc_id == 7:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 8:\n            pass\n    \n        elif tc_id == 9:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 10:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 11:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif 13 &amp;lt;= tc_id &amp;lt;= 21:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            if tc_id == 13: click(driver, &amp;quot;A4&amp;quot;)\n            elif tc_id == 14: click(driver, &amp;quot;Letter&amp;quot;)\n            elif tc_id == 15: click(driver, &amp;quot;Portrait&amp;quot;)\n            elif tc_id == 16: click(driver, &amp;quot;Landscape&amp;quot;)\n            elif tc_id == 17: click(driver, &amp;quot;Vertical&amp;quot;)\n            elif tc_id == 18: click(driver, &amp;quot;Horizontal&amp;quot;)\n            elif tc_id == 19: click(driver, &amp;quot;One&amp;quot;)\n            else: click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif 22 &amp;lt;= tc_id &amp;lt;= 37:\n    \n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            # A4 vs Letter\n            if tc_id &amp;lt;= 29:\n                click(driver, &amp;quot;A4&amp;quot;)\n            else:\n                click(driver, &amp;quot;Letter&amp;quot;)\n    \n            # Portrait vs Landscape\n            if tc_id in [22,23,26,28,30,31,34,36]:\n                click(driver, &amp;quot;Portrait&amp;quot;)\n            else:\n                click(driver, &amp;quot;Landscape&amp;quot;)\n    \n            # Vertical vs Horizontal\n            if tc_id in [22,24,26,29,30,32,34,37]:\n                click(driver, &amp;quot;Vertical&amp;quot;)\n            else:\n                click(driver, &amp;quot;Horizontal&amp;quot;)\n    \n            # One vs Multiple\n            if tc_id in [22,23,24,25,30,31,32,33]:\n                click(driver, &amp;quot;One&amp;quot;)\n            else:\n                click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif tc_id == 38:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;corrupt.jpg&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;corrupt&amp;quot; in page\n    \n        elif tc_id == 39:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pptx&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;unsupported&amp;quot; in page or &amp;quot;invalid&amp;quot; in page\n    \n        elif tc_id == 40:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.refresh()\n    \n        elif tc_id == 41:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;longfilename.jpg&amp;quot;))\n    \n        elif tc_id == 42:\n            driver.set_window_size(400, 800)\n    \n        elif tc_id == 43:\n            driver.set_window_size(375, 812)\n            time.sleep(2)\n            assert driver.find_element(By.XPATH, &amp;quot;//input[@type=&amp;#x27;file&amp;#x27;]&amp;quot;).is_displayed()\n            assert driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Create&amp;#x27;)]&amp;quot;).is_displayed()\n    \n        elif tc_id == 45:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n&amp;gt;           assert any(k in page for k in [&amp;quot;error&amp;quot;, &amp;quot;invalid&amp;quot;, &amp;quot;unsupported&amp;quot;, &amp;quot;format&amp;quot;])\nE           assert False\nE            +  where False = any(&amp;lt;generator object execute_test.&amp;lt;locals&amp;gt;.&amp;lt;genexpr&amp;gt; at 0x00000216119A20A0&amp;gt;)\n\nimage_to_pdf.py:260: AssertionError\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_045 - Upload PDF error validation\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_046]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_046]&#34;, &#34;duration&#34;: &#34;00:00:09&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_046]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:09&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: None\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_047 - File size &gt; 20MB validation]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_047 - File size &gt; 20MB validation]&#34;, &#34;duration&#34;: &#34;00:00:09&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_047 - File size &gt; 20MB validation]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:09&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;1147be240cfaa71ae30ef223b4d28cb2&amp;quot;)&amp;gt;, tc_id = 47\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\nimage_to_pdf.py:263: in execute_test\n    upload(driver, os.path.join(DESKTOP, &amp;quot;large_20mb.jpg&amp;quot;))\nimage_to_pdf.py:96: in upload\n    driver.find_element(By.XPATH, &amp;quot;//input[@type=&amp;#x27;file&amp;#x27;]&amp;quot;).send_keys(file_path)\n..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\selenium\\webdriver\\remote\\webelement.py:231: in send_keys\n    self._execute(\n..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\selenium\\webdriver\\remote\\webelement.py:395: in _execute\n    return self._parent.execute(command, params)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\selenium\\webdriver\\remote\\webdriver.py:347: in execute\n    self.error_handler.check_response(response)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = &amp;lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x0000021611A17DE0&amp;gt;\nresponse = {&amp;#x27;status&amp;#x27;: 400, &amp;#x27;value&amp;#x27;: &amp;#x27;{&amp;quot;value&amp;quot;:{&amp;quot;error&amp;quot;:&amp;quot;invalid argument&amp;quot;,&amp;quot;message&amp;quot;:&amp;quot;invalid argument: File not found : C:\\\\\\\\Use...7+2787]\\\\n\\\\tKERNEL32!BaseThreadInitThunk [0x7ff9c476e8d7+17]\\\\n\\\\tntdll!RtlUserThreadStart [0x7ff9c60cc48c+2c]\\\\n&amp;quot;}}&amp;#x27;}\n\n    def check_response(self, response: Dict[str, Any]) -&amp;gt; None:\n        &amp;quot;&amp;quot;&amp;quot;Checks that a JSON response from the WebDriver does not have an\n        error.\n    \n        :Args:\n         - response - The JSON response from the WebDriver server as a dictionary\n           object.\n    \n        :Raises: If the response contains an error message.\n        &amp;quot;&amp;quot;&amp;quot;\n        status = response.get(&amp;quot;status&amp;quot;, None)\n        if not status or status == ErrorCode.SUCCESS:\n            return\n        value = None\n        message = response.get(&amp;quot;message&amp;quot;, &amp;quot;&amp;quot;)\n        screen: str = response.get(&amp;quot;screen&amp;quot;, &amp;quot;&amp;quot;)\n        stacktrace = None\n        if isinstance(status, int):\n            value_json = response.get(&amp;quot;value&amp;quot;, None)\n            if value_json and isinstance(value_json, str):\n                import json\n    \n                try:\n                    value = json.loads(value_json)\n                    if len(value) == 1:\n                        value = value[&amp;quot;value&amp;quot;]\n                    status = value.get(&amp;quot;error&amp;quot;, None)\n                    if not status:\n                        status = value.get(&amp;quot;status&amp;quot;, ErrorCode.UNKNOWN_ERROR)\n                        message = value.get(&amp;quot;value&amp;quot;) or value.get(&amp;quot;message&amp;quot;)\n                        if not isinstance(message, str):\n                            value = message\n                            message = message.get(&amp;quot;message&amp;quot;)\n                    else:\n                        message = value.get(&amp;quot;message&amp;quot;, None)\n                except ValueError:\n                    pass\n    \n        exception_class: Type[WebDriverException]\n        e = ErrorCode()\n        error_codes = [item for item in dir(e) if not item.startswith(&amp;quot;__&amp;quot;)]\n        for error_code in error_codes:\n            error_info = getattr(ErrorCode, error_code)\n            if isinstance(error_info, list) and status in error_info:\n                exception_class = getattr(ExceptionMapping, error_code, WebDriverException)\n                break\n        else:\n            exception_class = WebDriverException\n    \n        if not value:\n            value = response[&amp;quot;value&amp;quot;]\n        if isinstance(value, str):\n            raise exception_class(value)\n        if message == &amp;quot;&amp;quot; and &amp;quot;message&amp;quot; in value:\n            message = value[&amp;quot;message&amp;quot;]\n    \n        screen = None  # type: ignore[assignment]\n        if &amp;quot;screen&amp;quot; in value:\n            screen = value[&amp;quot;screen&amp;quot;]\n    \n        stacktrace = None\n        st_value = value.get(&amp;quot;stackTrace&amp;quot;) or value.get(&amp;quot;stacktrace&amp;quot;)\n        if st_value:\n            if isinstance(st_value, str):\n                stacktrace = st_value.split(&amp;quot;\\n&amp;quot;)\n            else:\n                stacktrace = []\n                try:\n                    for frame in st_value:\n                        line = frame.get(&amp;quot;lineNumber&amp;quot;, &amp;quot;&amp;quot;)\n                        file = frame.get(&amp;quot;fileName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if line:\n                            file = f&amp;quot;{file}:{line}&amp;quot;\n                        meth = frame.get(&amp;quot;methodName&amp;quot;, &amp;quot;&amp;lt;anonymous&amp;gt;&amp;quot;)\n                        if &amp;quot;className&amp;quot; in frame:\n                            meth = f&amp;quot;{frame[&amp;#x27;className&amp;#x27;]}.{meth}&amp;quot;\n                        msg = &amp;quot;    at %s (%s)&amp;quot;\n                        msg = msg % (meth, file)\n                        stacktrace.append(msg)\n                except TypeError:\n                    pass\n        if exception_class == UnexpectedAlertPresentException:\n            alert_text = None\n            if &amp;quot;data&amp;quot; in value:\n                alert_text = value[&amp;quot;data&amp;quot;].get(&amp;quot;text&amp;quot;)\n            elif &amp;quot;alert&amp;quot; in value:\n                alert_text = value[&amp;quot;alert&amp;quot;].get(&amp;quot;text&amp;quot;)\n            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here\n&amp;gt;       raise exception_class(message, screen, stacktrace)\nE       selenium.common.exceptions.InvalidArgumentException: Message: invalid argument: File not found : C:\\Users\\Asus\\Desktop\\large_20mb.jpg\nE         (Session info: chrome=147.0.7727.102)\nE       Stacktrace:\nE       \tchromedriver!GetHandleVerifier [0x7ff760250295+146d5]\nE       \tchromedriver!GetHandleVerifier [0x7ff760250300+14740]\nE       \tchromedriver!(No symbol) [0x7ff75ffbd7cd]\nE       \tchromedriver!(No symbol) [0x7ff76000fb43]\nE       \tchromedriver!(No symbol) [0x7ff76003ff6a]\nE       \tchromedriver!(No symbol) [0x7ff76000a986]\nE       \tchromedriver!(No symbol) [0x7ff760064818]\nE       \tchromedriver!(No symbol) [0x7ff760009018]\nE       \tchromedriver!(No symbol) [0x7ff760009f03]\nE       \tchromedriver!GetHandleVerifier [0x7ff760565949+329d89]\nE       \tchromedriver!GetHandleVerifier [0x7ff76055fe96+3242d6]\nE       \tchromedriver!GetHandleVerifier [0x7ff760583102+347542]\nE       \tchromedriver!GetHandleVerifier [0x7ff76026d425+31865]\nE       \tchromedriver!GetHandleVerifier [0x7ff76027605c+3a49c]\nE       \tchromedriver!GetHandleVerifier [0x7ff760259684+1dac4]\nE       \tchromedriver!GetHandleVerifier [0x7ff760259836+1dc76]\nE       \tchromedriver!GetHandleVerifier [0x7ff76023e347+2787]\nE       \tKERNEL32!BaseThreadInitThunk [0x7ff9c476e8d7+17]\nE       \tntdll!RtlUserThreadStart [0x7ff9c60cc48c+2c]\n\n..\\..\\AppData\\Roaming\\Python\\Python314\\site-packages\\selenium\\webdriver\\remote\\errorhandler.py:229: InvalidArgumentException\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_047 - File size &amp;gt; 20MB validation\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_048 - Duplicate image upload]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Passed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_048 - Duplicate image upload]&#34;, &#34;duration&#34;: &#34;00:00:17&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Passed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_048 - Duplicate image upload]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:17&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_048 - Duplicate image upload\n&#34;}], &#34;image_to_pdf.py::test_all_cases[TC_049 - Create button without upload (Expected FAIL)]&#34;: [{&#34;extras&#34;: [], &#34;result&#34;: &#34;Failed&#34;, &#34;testId&#34;: &#34;image_to_pdf.py::test_all_cases[TC_049 - Create button without upload (Expected FAIL)]&#34;, &#34;duration&#34;: &#34;00:00:08&#34;, &#34;resultsTableRow&#34;: [&#34;&lt;td class=\&#34;col-result\&#34;&gt;Failed&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-testId\&#34;&gt;image_to_pdf.py::test_all_cases[TC_049 - Create button without upload (Expected FAIL)]&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-duration\&#34;&gt;00:00:08&lt;/td&gt;&#34;, &#34;&lt;td class=\&#34;col-links\&#34;&gt;&lt;/td&gt;&#34;], &#34;log&#34;: &#34;driver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;5aedd7e137a68ba5e5940b4add100e82&amp;quot;)&amp;gt;, tc_id = 49\n\n    @pytest.mark.parametrize(\n        &amp;quot;tc_id&amp;quot;,\n        range(1, 50),\n        ids=lambda x: TC_NAMES.get(x, f&amp;quot;TC_{x:03}&amp;quot;)\n    )\n    def test_all_cases(driver, tc_id):\n    \n        print(f&amp;quot;\\nRunning: {TC_NAMES.get(tc_id)}&amp;quot;)\n    \n        open_page(driver)\n    \n        try:\n            execute_test(driver, tc_id)\n            take_screenshot(driver, tc_id)\n        except Exception as e:\n            take_screenshot(driver, tc_id)\n&amp;gt;           raise e\n\nimage_to_pdf.py:303: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nimage_to_pdf.py:299: in test_all_cases\n    execute_test(driver, tc_id)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\ndriver = &amp;lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&amp;quot;5aedd7e137a68ba5e5940b4add100e82&amp;quot;)&amp;gt;, tc_id = 49\n\n    def execute_test(driver, tc_id):\n    \n        if tc_id == 1:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 2:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 3:\n            pytest.skip(&amp;quot;Skipped test case&amp;quot;)\n    \n        elif tc_id == 4:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;unsupported&amp;quot; in page\n    \n        elif tc_id == 5:\n         upload(driver, os.path.join(DESKTOP, &amp;quot;big.jpg&amp;quot;))\n    \n        page = driver.page_source.lower()\n    \n        # If system does NOT show any restriction message \u2192 it&amp;#x27;s a failure\n        if &amp;quot;large&amp;quot; not in page and &amp;quot;limit&amp;quot; not in page and &amp;quot;mb&amp;quot; not in page:\n            assert False, &amp;quot;FAIL: System allowed large file upload (should be restricted)&amp;quot;\n    \n        elif tc_id == 6:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif tc_id == 7:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 8:\n            pass\n    \n        elif tc_id == 9:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 10:\n            multi_upload(driver,\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;),\n                os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n        elif tc_id == 11:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Remove&amp;#x27;)]&amp;quot;).click()\n    \n        elif 13 &amp;lt;= tc_id &amp;lt;= 21:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            if tc_id == 13: click(driver, &amp;quot;A4&amp;quot;)\n            elif tc_id == 14: click(driver, &amp;quot;Letter&amp;quot;)\n            elif tc_id == 15: click(driver, &amp;quot;Portrait&amp;quot;)\n            elif tc_id == 16: click(driver, &amp;quot;Landscape&amp;quot;)\n            elif tc_id == 17: click(driver, &amp;quot;Vertical&amp;quot;)\n            elif tc_id == 18: click(driver, &amp;quot;Horizontal&amp;quot;)\n            elif tc_id == 19: click(driver, &amp;quot;One&amp;quot;)\n            else: click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif 22 &amp;lt;= tc_id &amp;lt;= 37:\n    \n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n    \n            # A4 vs Letter\n            if tc_id &amp;lt;= 29:\n                click(driver, &amp;quot;A4&amp;quot;)\n            else:\n                click(driver, &amp;quot;Letter&amp;quot;)\n    \n            # Portrait vs Landscape\n            if tc_id in [22,23,26,28,30,31,34,36]:\n                click(driver, &amp;quot;Portrait&amp;quot;)\n            else:\n                click(driver, &amp;quot;Landscape&amp;quot;)\n    \n            # Vertical vs Horizontal\n            if tc_id in [22,24,26,29,30,32,34,37]:\n                click(driver, &amp;quot;Vertical&amp;quot;)\n            else:\n                click(driver, &amp;quot;Horizontal&amp;quot;)\n    \n            # One vs Multiple\n            if tc_id in [22,23,24,25,30,31,32,33]:\n                click(driver, &amp;quot;One&amp;quot;)\n            else:\n                click(driver, &amp;quot;Multiple&amp;quot;)\n    \n            click(driver, &amp;quot;Create&amp;quot;)\n            check_pdf_generated(driver)\n    \n        elif tc_id == 38:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;corrupt.jpg&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;invalid&amp;quot; in page or &amp;quot;corrupt&amp;quot; in page\n    \n        elif tc_id == 39:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pptx&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;unsupported&amp;quot; in page or &amp;quot;invalid&amp;quot; in page\n    \n        elif tc_id == 40:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;))\n            driver.refresh()\n    \n        elif tc_id == 41:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;longfilename.jpg&amp;quot;))\n    \n        elif tc_id == 42:\n            driver.set_window_size(400, 800)\n    \n        elif tc_id == 43:\n            driver.set_window_size(375, 812)\n            time.sleep(2)\n            assert driver.find_element(By.XPATH, &amp;quot;//input[@type=&amp;#x27;file&amp;#x27;]&amp;quot;).is_displayed()\n            assert driver.find_element(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Create&amp;#x27;)]&amp;quot;).is_displayed()\n    \n        elif tc_id == 45:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;test.pdf&amp;quot;))\n            page = driver.page_source.lower()\n            assert any(k in page for k in [&amp;quot;error&amp;quot;, &amp;quot;invalid&amp;quot;, &amp;quot;unsupported&amp;quot;, &amp;quot;format&amp;quot;])\n    \n        elif tc_id == 47:\n            upload(driver, os.path.join(DESKTOP, &amp;quot;large_20mb.jpg&amp;quot;))\n            page = driver.page_source.lower()\n            assert &amp;quot;large&amp;quot; in page or &amp;quot;size&amp;quot; in page or &amp;quot;limit&amp;quot; in page or &amp;quot;mb&amp;quot; in page\n    \n        elif tc_id == 48:\n            # Duplicate image upload\n            file_path = os.path.join(DESKTOP, &amp;quot;test.jpg&amp;quot;)\n    \n            upload(driver, file_path)\n            upload(driver, file_path)\n    \n            time.sleep(2)\n            page = driver.page_source.lower()\n    \n    \n        elif tc_id == 49:\n            create_btn = driver.find_elements(By.XPATH, &amp;quot;//button[contains(text(),&amp;#x27;Create PDF&amp;#x27;)]&amp;quot;)\n            assert len(create_btn) &amp;gt; 0\n            assert create_btn[0].is_displayed()\n&amp;gt;           assert False, &amp;quot;Expected FAIL: Button should be disabled&amp;quot;\nE           AssertionError: Expected FAIL: Button should be disabled\nE           assert False\n\nimage_to_pdf.py:282: AssertionError\n\n----------------------------- Captured stdout call -----------------------------\n\nRunning: TC_049 - Create button without upload (Expected FAIL)\n&#34;}]}, &#34;renderCollapsed&#34;: [&#34;passed&#34;], &#34;initialSort&#34;: &#34;result&#34;, &#34;title&#34;: &#34;image_to_pdf_report.html&#34;}"></div>
+    <script>
+      (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
+const { getCollapsedCategory, setCollapsedIds } = require('./storage.js')
+
+class DataManager {
+    setManager(data) {
+        const collapsedCategories = [...getCollapsedCategory(data.renderCollapsed)]
+        const collapsedIds = []
+        const tests = Object.values(data.tests).flat().map((test, index) => {
+            const collapsed = collapsedCategories.includes(test.result.toLowerCase())
+            const id = `test_${index}`
+            if (collapsed) {
+                collapsedIds.push(id)
+            }
+            return {
+                ...test,
+                id,
+                collapsed,
+            }
+        })
+        const dataBlob = { ...data, tests }
+        this.data = { ...dataBlob }
+        this.renderData = { ...dataBlob }
+        setCollapsedIds(collapsedIds)
+    }
+
+    get allData() {
+        return { ...this.data }
+    }
+
+    resetRender() {
+        this.renderData = { ...this.data }
+    }
+
+    setRender(data) {
+        this.renderData.tests = [...data]
+    }
+
+    toggleCollapsedItem(id) {
+        this.renderData.tests = this.renderData.tests.map((test) =>
+            test.id === id ? { ...test, collapsed: !test.collapsed } : test,
+        )
+    }
+
+    set allCollapsed(collapsed) {
+        this.renderData = { ...this.renderData, tests: [...this.renderData.tests.map((test) => (
+            { ...test, collapsed }
+        ))] }
+    }
+
+    get testSubset() {
+        return [...this.renderData.tests]
+    }
+
+    get environment() {
+        return this.renderData.environment
+    }
+
+    get initialSort() {
+        return this.data.initialSort
+    }
+}
+
+module.exports = {
+    manager: new DataManager(),
+}
+
+},{"./storage.js":8}],2:[function(require,module,exports){
+const mediaViewer = require('./mediaviewer.js')
+const templateEnvRow = document.getElementById('template_environment_row')
+const templateResult = document.getElementById('template_results-table__tbody')
+
+function htmlToElements(html) {
+    const temp = document.createElement('template')
+    temp.innerHTML = html
+    return temp.content.childNodes
+}
+
+const find = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return elem.querySelector(selector)
+}
+
+const findAll = (selector, elem) => {
+    if (!elem) {
+        elem = document
+    }
+    return [...elem.querySelectorAll(selector)]
+}
+
+const dom = {
+    getStaticRow: (key, value) => {
+        const envRow = templateEnvRow.content.cloneNode(true)
+        const isObj = typeof value === 'object' && value !== null
+        const values = isObj ? Object.keys(value).map((k) => `${k}: ${value[k]}`) : null
+
+        const valuesElement = htmlToElements(
+            values ? `<ul>${values.map((val) => `<li>${val}</li>`).join('')}<ul>` : `<div>${value}</div>`)[0]
+        const td = findAll('td', envRow)
+        td[0].textContent = key
+        td[1].appendChild(valuesElement)
+
+        return envRow
+    },
+    getResultTBody: ({ testId, id, log, extras, resultsTableRow, tableHtml, result, collapsed }) => {
+        const resultBody = templateResult.content.cloneNode(true)
+        resultBody.querySelector('tbody').classList.add(result.toLowerCase())
+        resultBody.querySelector('tbody').id = testId
+        resultBody.querySelector('.collapsible').dataset.id = id
+
+        resultsTableRow.forEach((html) => {
+            const t = document.createElement('template')
+            t.innerHTML = html
+            resultBody.querySelector('.collapsible').appendChild(t.content)
+        })
+
+        if (log) {
+            // Wrap lines starting with "E" with span.error to color those lines red
+            const wrappedLog = log.replace(/^E.*$/gm, (match) => `<span class="error">${match}</span>`)
+            resultBody.querySelector('.log').innerHTML = wrappedLog
+        } else {
+            resultBody.querySelector('.log').remove()
+        }
+
+        if (collapsed) {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.add('collapsed')
+            resultBody.querySelector('.extras-row').classList.add('hidden')
+        } else {
+            resultBody.querySelector('.collapsible > .col-result')?.classList.remove('collapsed')
+        }
+
+        const media = []
+        extras?.forEach(({ name, format_type, content }) => {
+            if (['image', 'video'].includes(format_type)) {
+                media.push({ path: content, name, format_type })
+            }
+
+            if (format_type === 'html') {
+                resultBody.querySelector('.extraHTML').insertAdjacentHTML('beforeend', `<div>${content}</div>`)
+            }
+        })
+        mediaViewer.setup(resultBody, media)
+
+        // Add custom html from the pytest_html_results_table_html hook
+        tableHtml?.forEach((item) => {
+            resultBody.querySelector('td[class="extra"]').insertAdjacentHTML('beforeend', item)
+        })
+
+        return resultBody
+    },
+}
+
+module.exports = {
+    dom,
+    htmlToElements,
+    find,
+    findAll,
+}
+
+},{"./mediaviewer.js":6}],3:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const storageModule = require('./storage.js')
+
+const getFilteredSubSet = (filter) =>
+    manager.allData.tests.filter(({ result }) => filter.includes(result.toLowerCase()))
+
+const doInitFilter = () => {
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+}
+
+const doFilter = (type, show) => {
+    if (show) {
+        storageModule.showCategory(type)
+    } else {
+        storageModule.hideCategory(type)
+    }
+
+    const currentFilter = storageModule.getVisible()
+    const filteredSubset = getFilteredSubSet(currentFilter)
+    manager.setRender(filteredSubset)
+
+    const sortColumn = storageModule.getSort()
+    doSort(sortColumn, true)
+}
+
+module.exports = {
+    doFilter,
+    doInitFilter,
+}
+
+},{"./datamanager.js":1,"./sort.js":7,"./storage.js":8}],4:[function(require,module,exports){
+const { redraw, bindEvents, renderStatic } = require('./main.js')
+const { doInitFilter } = require('./filter.js')
+const { doInitSort } = require('./sort.js')
+const { manager } = require('./datamanager.js')
+const data = JSON.parse(document.getElementById('data-container').dataset.jsonblob)
+
+function init() {
+    manager.setManager(data)
+    doInitFilter()
+    doInitSort()
+    renderStatic()
+    redraw()
+    bindEvents()
+}
+
+init()
+
+},{"./datamanager.js":1,"./filter.js":3,"./main.js":5,"./sort.js":7}],5:[function(require,module,exports){
+const { dom, find, findAll } = require('./dom.js')
+const { manager } = require('./datamanager.js')
+const { doSort } = require('./sort.js')
+const { doFilter } = require('./filter.js')
+const {
+    getVisible,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    getSortDirection,
+    possibleFilters,
+} = require('./storage.js')
+
+const removeChildren = (node) => {
+    while (node.firstChild) {
+        node.removeChild(node.firstChild)
+    }
+}
+
+const renderStatic = () => {
+    const renderEnvironmentTable = () => {
+        const environment = manager.environment
+        const rows = Object.keys(environment).map((key) => dom.getStaticRow(key, environment[key]))
+        const table = document.getElementById('environment')
+        removeChildren(table)
+        rows.forEach((row) => table.appendChild(row))
+    }
+    renderEnvironmentTable()
+}
+
+const addItemToggleListener = (elem) => {
+    elem.addEventListener('click', ({ target }) => {
+        const id = target.parentElement.dataset.id
+        manager.toggleCollapsedItem(id)
+
+        const collapsedIds = getCollapsedIds()
+        if (collapsedIds.includes(id)) {
+            const updated = collapsedIds.filter((item) => item !== id)
+            setCollapsedIds(updated)
+        } else {
+            collapsedIds.push(id)
+            setCollapsedIds(collapsedIds)
+        }
+        redraw()
+    })
+}
+
+const renderContent = (tests) => {
+    const sortAttr = getSort(manager.initialSort)
+    const sortAsc = JSON.parse(getSortDirection())
+    const rows = tests.map(dom.getResultTBody)
+    const table = document.getElementById('results-table')
+    const tableHeader = document.getElementById('results-table-head')
+
+    const newTable = document.createElement('table')
+    newTable.id = 'results-table'
+
+    // remove all sorting classes and set the relevant
+    findAll('.sortable', tableHeader).forEach((elem) => elem.classList.remove('asc', 'desc'))
+    tableHeader.querySelector(`.sortable[data-column-type="${sortAttr}"]`)?.classList.add(sortAsc ? 'desc' : 'asc')
+    newTable.appendChild(tableHeader)
+
+    if (!rows.length) {
+        const emptyTable = document.getElementById('template_results-table__body--empty').content.cloneNode(true)
+        newTable.appendChild(emptyTable)
+    } else {
+        rows.forEach((row) => {
+            if (!!row) {
+                findAll('.collapsible td:not(.col-links', row).forEach(addItemToggleListener)
+                find('.logexpander', row).addEventListener('click',
+                    (evt) => evt.target.parentNode.classList.toggle('expanded'),
+                )
+                newTable.appendChild(row)
+            }
+        })
+    }
+
+    table.replaceWith(newTable)
+}
+
+const renderDerived = () => {
+    const currentFilter = getVisible()
+    possibleFilters.forEach((result) => {
+        const input = document.querySelector(`input[data-test-result="${result}"]`)
+        input.checked = currentFilter.includes(result)
+    })
+}
+
+const bindEvents = () => {
+    const filterColumn = (evt) => {
+        const { target: element } = evt
+        const { testResult } = element.dataset
+
+        doFilter(testResult, element.checked)
+        const collapsedIds = getCollapsedIds()
+        const updated = manager.renderData.tests.map((test) => {
+            return {
+                ...test,
+                collapsed: collapsedIds.includes(test.id),
+            }
+        })
+        manager.setRender(updated)
+        redraw()
+    }
+
+    const header = document.getElementById('environment-header')
+    header.addEventListener('click', () => {
+        const table = document.getElementById('environment')
+        table.classList.toggle('hidden')
+        header.classList.toggle('collapsed')
+    })
+
+    findAll('input[name="filter_checkbox"]').forEach((elem) => {
+        elem.addEventListener('click', filterColumn)
+    })
+
+    findAll('.sortable').forEach((elem) => {
+        elem.addEventListener('click', (evt) => {
+            const { target: element } = evt
+            const { columnType } = element.dataset
+            doSort(columnType)
+            redraw()
+        })
+    })
+
+    document.getElementById('show_all_details').addEventListener('click', () => {
+        manager.allCollapsed = false
+        setCollapsedIds([])
+        redraw()
+    })
+    document.getElementById('hide_all_details').addEventListener('click', () => {
+        manager.allCollapsed = true
+        const allIds = manager.renderData.tests.map((test) => test.id)
+        setCollapsedIds(allIds)
+        redraw()
+    })
+}
+
+const redraw = () => {
+    const { testSubset } = manager
+
+    renderContent(testSubset)
+    renderDerived()
+}
+
+module.exports = {
+    redraw,
+    bindEvents,
+    renderStatic,
+}
+
+},{"./datamanager.js":1,"./dom.js":2,"./filter.js":3,"./sort.js":7,"./storage.js":8}],6:[function(require,module,exports){
+class MediaViewer {
+    constructor(assets) {
+        this.assets = assets
+        this.index = 0
+    }
+
+    nextActive() {
+        this.index = this.index === this.assets.length - 1 ? 0 : this.index + 1
+        return [this.activeFile, this.index]
+    }
+
+    prevActive() {
+        this.index = this.index === 0 ? this.assets.length - 1 : this.index -1
+        return [this.activeFile, this.index]
+    }
+
+    get currentIndex() {
+        return this.index
+    }
+
+    get activeFile() {
+        return this.assets[this.index]
+    }
+}
+
+
+const setup = (resultBody, assets) => {
+    if (!assets.length) {
+        resultBody.querySelector('.media').classList.add('hidden')
+        return
+    }
+
+    const mediaViewer = new MediaViewer(assets)
+    const container = resultBody.querySelector('.media-container')
+    const leftArrow = resultBody.querySelector('.media-container__nav--left')
+    const rightArrow = resultBody.querySelector('.media-container__nav--right')
+    const mediaName = resultBody.querySelector('.media__name')
+    const counter = resultBody.querySelector('.media__counter')
+    const imageEl = resultBody.querySelector('img')
+    const sourceEl = resultBody.querySelector('source')
+    const videoEl = resultBody.querySelector('video')
+
+    const setImg = (media, index) => {
+        if (media?.format_type === 'image') {
+            imageEl.src = media.path
+
+            imageEl.classList.remove('hidden')
+            videoEl.classList.add('hidden')
+        } else if (media?.format_type === 'video') {
+            sourceEl.src = media.path
+
+            videoEl.classList.remove('hidden')
+            imageEl.classList.add('hidden')
+        }
+
+        mediaName.innerText = media?.name
+        counter.innerText = `${index + 1} / ${assets.length}`
+    }
+    setImg(mediaViewer.activeFile, mediaViewer.currentIndex)
+
+    const moveLeft = () => {
+        const [media, index] = mediaViewer.prevActive()
+        setImg(media, index)
+    }
+    const doRight = () => {
+        const [media, index] = mediaViewer.nextActive()
+        setImg(media, index)
+    }
+    const openImg = () => {
+        window.open(mediaViewer.activeFile.path, '_blank')
+    }
+    if (assets.length === 1) {
+        container.classList.add('media-container--fullscreen')
+    } else {
+        leftArrow.addEventListener('click', moveLeft)
+        rightArrow.addEventListener('click', doRight)
+    }
+    imageEl.addEventListener('click', openImg)
+}
+
+module.exports = {
+    setup,
+}
+
+},{}],7:[function(require,module,exports){
+const { manager } = require('./datamanager.js')
+const storageModule = require('./storage.js')
+
+const genericSort = (list, key, ascending, customOrder) => {
+    let sorted
+    if (customOrder) {
+        sorted = list.sort((a, b) => {
+            const aValue = a.result.toLowerCase()
+            const bValue = b.result.toLowerCase()
+
+            const aIndex = customOrder.findIndex((item) => item.toLowerCase() === aValue)
+            const bIndex = customOrder.findIndex((item) => item.toLowerCase() === bValue)
+
+            // Compare the indices to determine the sort order
+            return aIndex - bIndex
+        })
+    } else {
+        sorted = list.sort((a, b) => a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1)
+    }
+
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const durationSort = (list, ascending) => {
+    const parseDuration = (duration) => {
+        if (duration.includes(':')) {
+            // If it's in the format "HH:mm:ss"
+            const [hours, minutes, seconds] = duration.split(':').map(Number)
+            return (hours * 3600 + minutes * 60 + seconds) * 1000
+        } else {
+            // If it's in the format "nnn ms"
+            return parseInt(duration)
+        }
+    }
+    const sorted = list.sort((a, b) => parseDuration(a['duration']) - parseDuration(b['duration']))
+    if (ascending) {
+        sorted.reverse()
+    }
+    return sorted
+}
+
+const doInitSort = () => {
+    const type = storageModule.getSort(manager.initialSort)
+    const ascending = storageModule.getSortDirection()
+    const list = manager.testSubset
+    const initialOrder = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed', 'Skipped', 'Passed']
+
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    if (type?.toLowerCase() === 'original') {
+        manager.setRender(list)
+    } else {
+        let sortedList
+        switch (type) {
+        case 'duration':
+            sortedList = durationSort(list, ascending)
+            break
+        case 'result':
+            sortedList = genericSort(list, type, ascending, initialOrder)
+            break
+        default:
+            sortedList = genericSort(list, type, ascending)
+            break
+        }
+        manager.setRender(sortedList)
+    }
+}
+
+const doSort = (type, skipDirection) => {
+    const newSortType = storageModule.getSort(manager.initialSort) !== type
+    const currentAsc = storageModule.getSortDirection()
+    let ascending
+    if (skipDirection) {
+        ascending = currentAsc
+    } else {
+        ascending = newSortType ? false : !currentAsc
+    }
+    storageModule.setSort(type)
+    storageModule.setSortDirection(ascending)
+
+    const list = manager.testSubset
+    const sortedList = type === 'duration' ? durationSort(list, ascending) : genericSort(list, type, ascending)
+    manager.setRender(sortedList)
+}
+
+module.exports = {
+    doInitSort,
+    doSort,
+}
+
+},{"./datamanager.js":1,"./storage.js":8}],8:[function(require,module,exports){
+const possibleFilters = [
+    'passed',
+    'skipped',
+    'failed',
+    'error',
+    'xfailed',
+    'xpassed',
+    'rerun',
+]
+
+const getVisible = () => {
+    const url = new URL(window.location.href)
+    const settings = new URLSearchParams(url.search).get('visible')
+    const lower = (item) => {
+        const lowerItem = item.toLowerCase()
+        if (possibleFilters.includes(lowerItem)) {
+            return lowerItem
+        }
+        return null
+    }
+    return settings === null ?
+        possibleFilters :
+        [...new Set(settings?.split(',').map(lower).filter((item) => item))]
+}
+
+const hideCategory = (categoryToHide) => {
+    const url = new URL(window.location.href)
+    const visibleParams = new URLSearchParams(url.search).get('visible')
+    const currentVisible = visibleParams ? visibleParams.split(',') : [...possibleFilters]
+    const settings = [...new Set(currentVisible)].filter((f) => f !== categoryToHide).join(',')
+
+    url.searchParams.set('visible', settings)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const showCategory = (categoryToShow) => {
+    if (typeof window === 'undefined') {
+        return
+    }
+    const url = new URL(window.location.href)
+    const currentVisible = new URLSearchParams(url.search).get('visible')?.split(',').filter(Boolean) ||
+        [...possibleFilters]
+    const settings = [...new Set([categoryToShow, ...currentVisible])]
+    const noFilter = possibleFilters.length === settings.length || !settings.length
+
+    noFilter ? url.searchParams.delete('visible') : url.searchParams.set('visible', settings.join(','))
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getSort = (initialSort) => {
+    const url = new URL(window.location.href)
+    let sort = new URLSearchParams(url.search).get('sort')
+    if (!sort) {
+        sort = initialSort || 'result'
+    }
+    return sort
+}
+
+const setSort = (type) => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', type)
+    window.history.pushState({}, null, unescape(url.href))
+}
+
+const getCollapsedCategory = (renderCollapsed) => {
+    let categories
+    if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        const collapsedItems = new URLSearchParams(url.search).get('collapsed')
+        switch (true) {
+        case !renderCollapsed && collapsedItems === null:
+            categories = ['passed']
+            break
+        case collapsedItems?.length === 0 || /^["']{2}$/.test(collapsedItems):
+            categories = []
+            break
+        case /^all$/.test(collapsedItems) || collapsedItems === null && /^all$/.test(renderCollapsed):
+            categories = [...possibleFilters]
+            break
+        default:
+            categories = collapsedItems?.split(',').map((item) => item.toLowerCase()) || renderCollapsed
+            break
+        }
+    } else {
+        categories = []
+    }
+    return categories
+}
+
+const getSortDirection = () => JSON.parse(sessionStorage.getItem('sortAsc')) || false
+const setSortDirection = (ascending) => sessionStorage.setItem('sortAsc', ascending)
+
+const getCollapsedIds = () => JSON.parse(sessionStorage.getItem('collapsedIds')) || []
+const setCollapsedIds = (list) => sessionStorage.setItem('collapsedIds', JSON.stringify(list))
+
+module.exports = {
+    getVisible,
+    hideCategory,
+    showCategory,
+    getCollapsedIds,
+    setCollapsedIds,
+    getSort,
+    setSort,
+    getSortDirection,
+    setSortDirection,
+    getCollapsedCategory,
+    possibleFilters,
+}
+
+},{}]},{},[4]);
+    </script>
+  </footer>
+  </body>
+</html>
